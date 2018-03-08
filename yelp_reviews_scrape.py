@@ -4,7 +4,6 @@ import yaml
 import requests
 import json
 
-
 config_file_path = "config.yml"
 
 funny_count_identifier = "ybtn ybtn--small funny js-analytics-click"
@@ -18,9 +17,16 @@ location_identifier = "user-location responsive-hidden-small"
 friends_count_identifier = "friend-count responsive-small-display-inline-block"
 review_count_identifier = "review-count responsive-small-display-inline-block"
 photo_count_identifier = "photo-count responsive-small-display-inline-block"
+business_name_identifier = "biz-page-title embossed-text-white"
+neighborhood_identifier = "neighborhood-str-list"
+map_identifier = "lightbox-map hidden"
+category_identifier = "category-str-list"
+hours_identifier = "table table-simple hours-table"
 
 rev_data_list = []
 author_data_list = []
+restaurant_data_list = []
+
 
 def formatted_id(userid):
     fid = userid.replace("user_id:", "")
@@ -43,7 +49,6 @@ def formatted_count(count):
 
 
 def get_reviews_for_restaurant(restaurant_url):
-
     print("\nExtracting Reviews....\n")
 
     url = restaurant_url
@@ -51,13 +56,85 @@ def get_reviews_for_restaurant(restaurant_url):
     html_content = r.text
     soup = BeautifulSoup(html_content, "html.parser")
 
-    rev_count_tag = soup.find_all("span", attrs={'itemprop':'reviewCount'})[0]
+
+    restaurant_csv = {}
+    restaurant_name = soup.find('h1', attrs={'class': business_name_identifier})
+
+    address_tag = soup.find('address').text.strip()
+    address = address_tag.replace('Chicago', ', Chicago')
+    address += " Neighborhood: " + soup.find('span', attrs={'class': neighborhood_identifier}).text.strip()
+
+    rev_count_tag = soup.find_all("span", attrs={'itemprop': 'reviewCount'})[0]
     rev_count = int(rev_count_tag.text)
     rev_page_count = int(rev_count / 20) - 1
 
-    for i in range(0,rev_page_count):
+    rating = soup.find('meta', attrs={'itemprop': 'ratingValue'})
 
-        url = restaurant_url + "?start=" + str(i*20)
+    location_obj = json.loads(soup.find('div', class_=map_identifier)['data-map-state'])
+    categories_list = soup.find('span', class_=category_identifier)
+    hours_tag = soup.find('table', class_=hours_identifier)
+    hours = ""
+    for tr in hours_tag.find_all('tr'):
+        for th in tr.find_all('th'):
+            hours += th.text
+            for td in tr.find_all('td'):
+                hours += td.text
+                if tr.find('span', class_="nowrap closed") is not None or tr.find('span', class_="nowrap open") is not None:
+                    break
+    hours = hours.replace("\n", " ").strip()
+
+    ul = soup.find_all('ul', class_='ylist')[2]
+    for dl in ul.find_all('dl'):
+        if dl.find('dt').text.strip() == "Good for Kids":
+            restaurant_csv['GoodforKids'] = dl.find('dd').text.strip()
+        elif dl.find('dt').text.strip() == "Accepts Credit Cards":
+            restaurant_csv['AcceptsCreditCards'] = dl.find('dd').text.strip()
+        elif dl.find('dt').text.strip() == "Parking":
+            restaurant_csv['Parking'] = dl.find('dd').text.strip()
+        elif dl.find('dt').text.strip() == "Attire":
+            restaurant_csv['Attire'] = dl.find('dd').text.strip()
+        elif dl.find('dt').text.strip() == "Good for Groups":
+            restaurant_csv['GoodforGroups'] = dl.find('dd').text.strip()
+        elif dl.find('dt').text.strip() == "Takes Reservations":
+            restaurant_csv['TakesReservations'] = dl.find('dd').text.strip()
+        elif dl.find('dt').text.strip() == "Delivery":
+            restaurant_csv['Delivery'] = dl.find('dd').text.strip()
+        elif dl.find('dt').text.strip() == "Take-out":
+            restaurant_csv['Takeout'] = dl.find('dd').text.strip()
+        elif dl.find('dt').text.strip() == "Waiter Service":
+            restaurant_csv['WaiterService'] = dl.find('dd').text.strip()
+        elif dl.find('dt').text.strip() == "Outdoor Seating":
+            restaurant_csv['OutdoorSeating'] = dl.find('dd').text.strip()
+        elif dl.find('dt').text.strip() == "Wi-Fi":
+            restaurant_csv['WiFi'] = dl.find('dd').text.strip()
+        elif dl.find('dt').text.strip() == "Good For":
+            restaurant_csv['GoodFor'] = dl.find('dd').text.strip()
+        elif dl.find('dt').text.strip() == "Alcohol":
+            restaurant_csv['Alcohol'] = dl.find('dd').text.strip()
+        elif dl.find('dt').text.strip() == "Noise Level":
+            restaurant_csv['NoiseLevel'] = dl.find('dd').text.strip()
+        elif dl.find('dt').text.strip() == "Ambience":
+            restaurant_csv['Ambience'] = dl.find('dd').text.strip()
+        elif dl.find('dt').text.strip() == "Has TV":
+            restaurant_csv['HasTV'] = dl.find('dd').text.strip()
+        elif dl.find('dt').text.strip() == "Caters":
+            restaurant_csv['Caters'] = dl.find('dd').text.strip()
+        #print(dl.text)
+    #print(ul)
+    restaurant_csv['name'] = restaurant_name.text.strip()
+    restaurant_csv['restaurantID'] = location_obj['markers'][1]['resourceId']
+    restaurant_csv['location'] = location_obj['center']
+    restaurant_csv['address'] = address
+    restaurant_csv['reviewCount'] = rev_count
+    restaurant_csv['rating'] = float(rating['content'])
+    restaurant_csv['categories'] = categories_list.text.replace("  ", "").replace("\n", " ").strip()
+    restaurant_csv['Hours'] = hours
+    restaurant_data_list.append(restaurant_csv)
+    print(restaurant_csv)
+
+    for i in range(0, rev_page_count):
+
+        url = restaurant_url + "?start=" + str(i * 20)
         r = requests.get(url)
         html_content = r.text
         soup = BeautifulSoup(html_content, "html.parser")
@@ -69,7 +146,7 @@ def get_reviews_for_restaurant(restaurant_url):
             generate_review_list(li)
             generate_author_list(li)
 
-        percent = int((i * 100)/rev_page_count)
+        percent = int((i * 100) / rev_page_count)
         print('\r[{0}] {1}%'.format('#' * percent, percent), end="")
 
     print('\r[{0}] {1}%'.format('#' * 100, 100))
@@ -112,7 +189,6 @@ def generate_review_list(li):
 
 
 def generate_author_list(li):
-
     new_author_list = []
     if len(li.find_all("div", class_=userid_identifier)) != 0:
         userid_tag = li.find_all("div", class_=userid_identifier)[0]
@@ -143,9 +219,4 @@ def generate_author_list(li):
 
 print("{0} {1}".format("\n\n", get_reviews_for_restaurant("https://www.yelp.com/biz/meli-cafe-and-juice-bar-chicago")))
 
-
-
-
-
-
-
+#get_reviews_for_restaurant("https://www.yelp.com/biz/portillos-hot-dogs-and-barnellis-salad-bowl-chicago")
