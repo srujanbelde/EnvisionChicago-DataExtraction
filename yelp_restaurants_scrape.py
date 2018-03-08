@@ -76,9 +76,10 @@ def get_restaurant_link():
                 detail_dict['name'] = restaurant_name_list[idx]
                 detail_dict['link'] = restaurant_link_list[idx]
                 restaurant_complete_details_list.append(detail_dict)
+    sys.stdout.write("\r" + "Extracted: " + str(len(restaurant_complete_details_list)) + " links for the zipcode: 60610")
     sys.stdout.flush()
-    print("Extracted " + str(len(restaurant_complete_details_list)) + " links for the zipcode: 60610")
+    print()
     return restaurant_complete_details_list
 
 
-print(get_restaurant_link())
+#print(get_restaurant_link())
