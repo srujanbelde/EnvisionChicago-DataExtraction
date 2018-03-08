@@ -52,6 +52,11 @@ def get_reviews_for_restaurant(restaurant_url):
 
     for i in range(0,rev_page_count):
 
+        url = restaurant_url + "?start=" + str(i*20)
+        r = requests.get(url)
+        html_content = r.text
+        soup = BeautifulSoup(html_content, "html.parser")
+
         ul_html = soup.find_all("ul", class_=total_reviews_identifier)[0]
         li_list = ul_html.find_all("li", recursive=False)
 
