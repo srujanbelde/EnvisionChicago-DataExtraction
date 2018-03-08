@@ -50,8 +50,14 @@ def formatted_count(count):
     return fcount
 
 
-def get_amenties(ul_tag, rest_dict):
-    for dl in ul_tag.find_all('dl'):
+def get_more_biz_info(div_tag, rest_dict):
+    final_div = ""
+    for div in div_tag:
+        if "More business info" in div.find('h3'):
+            final_div = div
+            break
+
+    for dl in final_div.find_all('dl'):
         if dl.find('dt').text.strip() == "Good for Kids":
             rest_dict['GoodforKids'] = dl.find('dd').text.strip()
         elif dl.find('dt').text.strip() == "Accepts Credit Cards":
@@ -128,8 +134,9 @@ def get_reviews_for_restaurant(restaurant_url):
     hours = hours.replace("\n", " ").strip()
 
     restaurant_csv['WheelchairAccessible'] = "No"
-    ul = soup.find_all('ul', class_='ylist')[2]
-    restaurant_csv = get_amenties(ul, restaurant_csv)
+    div_biz_info = soup.find_all('div', class_='ywidget')
+    restaurant_csv = get_more_biz_info(div_biz_info, restaurant_csv)
+
 
 
     price_range = soup.find('span', class_=price_range_identifier)
@@ -236,6 +243,7 @@ def generate_author_list(li):
 
 print("{0} {1}".format("\n\n", get_reviews_for_restaurant("https://www.yelp.com/biz/meli-cafe-and-juice-bar-chicago")))
 
+get_reviews_for_restaurant("https://www.yelp.com/biz/big-and-littles-restaurant-chicago-3")
 for x in restaurant_data_list:
     for key, value in x.items():
         print(key, value)
