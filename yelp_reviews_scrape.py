@@ -116,7 +116,7 @@ def get_reviews_for_restaurant(restaurant_url):
     rev_count_tag = soup.find_all("span", attrs={'itemprop': 'reviewCount'})[0]
     rev_count = int(rev_count_tag.text)
     rev_page_count = int(rev_count / 20) - 1
-    
+
     restaurant_csv = {}
     restaurant_name = soup.find('h1', attrs={'class': business_name_identifier})
 
@@ -172,7 +172,7 @@ def get_reviews_for_restaurant(restaurant_url):
         li_list = ul_html.find_all("li", recursive=False)
 
         for li in li_list:
-            generate_review_list(li)
+            generate_review_list(li, restaurant_csv)
             generate_author_list(li)
 
         percent = int((i * 100) / rev_page_count)
@@ -184,7 +184,7 @@ def get_reviews_for_restaurant(restaurant_url):
     return rev_data_list[1:]
 
 
-def generate_review_list(li):
+def generate_review_list(li, restaurant_csv):
     new_review_list = []
 
     if len(li.find_all("div", class_=userid_identifier)) != 0:
@@ -193,6 +193,8 @@ def generate_review_list(li):
 
     #TODO: Business ID extraction
 
+    new_review_list.append(restaurant_csv['restaurantID'])
+
     if len(li.find_all("div", class_=userid_identifier)) != 0:
         userid_tag = li.find_all("div", class_=userid_identifier)[0]
         #new_review_dict["user_id"] = formatted_id(userid_tag.attrs["data-signup-object"])
@@ -200,7 +202,7 @@ def generate_review_list(li):
 
     if len(li.find_all("span", class_=date_identifier)) != 0:
         date_tag = li.find_all("span", class_=date_identifier)[0]
-        new_review_list.append(date_tag.text.strip())
+        new_review_list.append(date_tag.text.strip().split(" ")[0].strip())
 
     if len(li.find_all("p")) != 0:
         feedback_tag = li.find_all("p")[0]
@@ -222,7 +224,8 @@ def generate_review_list(li):
         cool_count_tree = li.find_all("a", class_=cool_count_identifier)[0]
         new_review_list.append(formatted_count(cool_count_tree.find_all("span", class_="count")[0].text))
 
-    rev_data_list.append(new_review_list)
+    if len(new_review_list) > 0:
+        rev_data_list.append(new_review_list)
 
 
 def generate_author_list(li):
@@ -252,19 +255,20 @@ def generate_author_list(li):
         photo_count_tag = li.find_all("li", class_=photo_count_identifier)[0]
         new_author_list.append(photo_count_tag.text.strip().split(" ")[0])
 
-    author_data_list.append(new_author_list)
+    if len(new_author_list) > 0:
+        author_data_list.append(new_author_list)
 
 
 def generate_author_csv():
     with open(author_csv_path, "w") as output:
         writer = csv.writer(output, lineterminator='\n')
-        writer.writerows(author_data_list[1:])
+        writer.writerows(author_data_list)
 
 
 def generate_review_csv():
     with open(review_csv_path, "w") as output:
         writer = csv.writer(output, lineterminator='\n')
-        writer.writerows(rev_data_list[1:])
+        writer.writerows(rev_data_list)
 
 
 print("{0} {1}".format("\n\n", get_reviews_for_restaurant("https://www.yelp.com/biz/meli-cafe-and-juice-bar-chicago")))
