@@ -22,6 +22,8 @@ neighborhood_identifier = "neighborhood-str-list"
 map_identifier = "lightbox-map hidden"
 category_identifier = "category-str-list"
 hours_identifier = "table table-simple hours-table"
+price_range_identifier = "business-attribute price-range"
+website_identifier = "biz-website js-biz-website js-add-url-tagging"
 
 rev_data_list = []
 author_data_list = []
@@ -72,6 +74,7 @@ def get_reviews_for_restaurant(restaurant_url):
 
     location_obj = json.loads(soup.find('div', class_=map_identifier)['data-map-state'])
     categories_list = soup.find('span', class_=category_identifier)
+
     hours_tag = soup.find('table', class_=hours_identifier)
     hours = ""
     for tr in hours_tag.find_all('tr'):
@@ -83,6 +86,7 @@ def get_reviews_for_restaurant(restaurant_url):
                     break
     hours = hours.replace("\n", " ").strip()
 
+    restaurant_csv['WheelchairAccessible'] = "No"
     ul = soup.find_all('ul', class_='ylist')[2]
     for dl in ul.find_all('dl'):
         if dl.find('dt').text.strip() == "Good for Kids":
@@ -119,8 +123,13 @@ def get_reviews_for_restaurant(restaurant_url):
             restaurant_csv['HasTV'] = dl.find('dd').text.strip()
         elif dl.find('dt').text.strip() == "Caters":
             restaurant_csv['Caters'] = dl.find('dd').text.strip()
-        #print(dl.text)
-    #print(ul)
+        elif "wheelchair" in dl.find('dt').text.strip().lower():
+            restaurant_csv['WheelchairAccessible'] = dl.find('dd').text.strip()
+
+    price_range = soup.find('span', class_=price_range_identifier)
+    website_span = soup.find('span', class_=website_identifier)
+    phone_number = soup.find('span', class_="biz-phone").text.strip()
+
     restaurant_csv['name'] = restaurant_name.text.strip()
     restaurant_csv['restaurantID'] = location_obj['markers'][1]['resourceId']
     restaurant_csv['location'] = location_obj['center']
@@ -129,6 +138,9 @@ def get_reviews_for_restaurant(restaurant_url):
     restaurant_csv['rating'] = float(rating['content'])
     restaurant_csv['categories'] = categories_list.text.replace("  ", "").replace("\n", " ").strip()
     restaurant_csv['Hours'] = hours
+    restaurant_csv['PriceRange'] = price_range.text.strip()
+    restaurant_csv['webSite']= website_span.find('a').text.strip()
+    restaurant_csv['phoneNumber'] = phone_number
     restaurant_data_list.append(restaurant_csv)
     print(restaurant_csv)
 
@@ -218,5 +230,3 @@ def generate_author_list(li):
 
 
 print("{0} {1}".format("\n\n", get_reviews_for_restaurant("https://www.yelp.com/biz/meli-cafe-and-juice-bar-chicago")))
-
-#get_reviews_for_restaurant("https://www.yelp.com/biz/portillos-hot-dogs-and-barnellis-salad-bowl-chicago")
