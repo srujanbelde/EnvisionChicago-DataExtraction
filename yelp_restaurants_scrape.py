@@ -79,6 +79,7 @@ def get_restaurant_link():
     sys.stdout.write("\r" + "Extracted: " + str(len(restaurant_complete_details_list)) + " links for the zipcode: 60610")
     sys.stdout.flush()
     print()
+    print(restaurant_complete_details_list)
     return restaurant_complete_details_list
 
 
