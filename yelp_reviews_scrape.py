@@ -20,7 +20,6 @@ location_identifier = "user-location responsive-hidden-small"
 friends_count_identifier = "friend-count responsive-small-display-inline-block"
 review_count_identifier = "review-count responsive-small-display-inline-block"
 photo_count_identifier = "photo-count responsive-small-display-inline-block"
-business_name_identifier = "biz-page-title embossed-text-white"
 neighborhood_identifier = "neighborhood-str-list"
 map_identifier = "lightbox-map hidden"
 category_identifier = "category-str-list"
@@ -29,13 +28,11 @@ price_range_identifier = "business-attribute price-range"
 website_identifier = "biz-website js-biz-website js-add-url-tagging"
 date_identifier = "rating-qualifier"
 
-
 author_csv_path = "./author.csv"
 review_csv_path = "./review.csv"
 
 rev_data_list = []
 author_data_list = []
-restaurant_data_list = []
 
 
 def formatted_id(userid):
@@ -67,41 +64,41 @@ def get_more_biz_info(div_tag, rest_dict):
 
     for dl in final_div.find_all('dl'):
         if dl.find('dt').text.strip() == "Good for Kids":
-            rest_dict['GoodforKids'] = dl.find('dd').text.strip()
+            rest_dict[8] = dl.find('dd').text.strip()
         elif dl.find('dt').text.strip() == "Accepts Credit Cards":
-            rest_dict['AcceptsCreditCards'] = dl.find('dd').text.strip()
+            rest_dict[9] = dl.find('dd').text.strip()
         elif dl.find('dt').text.strip() == "Parking":
-            rest_dict['Parking'] = dl.find('dd').text.strip()
+            rest_dict[10] = dl.find('dd').text.strip()
         elif dl.find('dt').text.strip() == "Attire":
-            rest_dict['Attire'] = dl.find('dd').text.strip()
+            rest_dict[11] = dl.find('dd').text.strip()
         elif dl.find('dt').text.strip() == "Good for Groups":
-            rest_dict['GoodforGroups'] = dl.find('dd').text.strip()
+            rest_dict[12] = dl.find('dd').text.strip()
         elif dl.find('dt').text.strip() == "Takes Reservations":
-            rest_dict['TakesReservations'] = dl.find('dd').text.strip()
+            rest_dict[14] = dl.find('dd').text.strip()
         elif dl.find('dt').text.strip() == "Delivery":
-            rest_dict['Delivery'] = dl.find('dd').text.strip()
+            rest_dict[15] = dl.find('dd').text.strip()
         elif dl.find('dt').text.strip() == "Take-out":
-            rest_dict['Takeout'] = dl.find('dd').text.strip()
+            rest_dict[16] = dl.find('dd').text.strip()
         elif dl.find('dt').text.strip() == "Waiter Service":
-            rest_dict['WaiterService'] = dl.find('dd').text.strip()
+            rest_dict[17] = dl.find('dd').text.strip()
         elif dl.find('dt').text.strip() == "Outdoor Seating":
-            rest_dict['OutdoorSeating'] = dl.find('dd').text.strip()
+            rest_dict[18] = dl.find('dd').text.strip()
         elif dl.find('dt').text.strip() == "Wi-Fi":
-            rest_dict['WiFi'] = dl.find('dd').text.strip()
+            rest_dict[19] = dl.find('dd').text.strip()
         elif dl.find('dt').text.strip() == "Good For":
-            rest_dict['GoodFor'] = dl.find('dd').text.strip()
+            rest_dict[20] = dl.find('dd').text.strip()
         elif dl.find('dt').text.strip() == "Alcohol":
-            rest_dict['Alcohol'] = dl.find('dd').text.strip()
+            rest_dict[21] = dl.find('dd').text.strip()
         elif dl.find('dt').text.strip() == "Noise Level":
-            rest_dict['NoiseLevel'] = dl.find('dd').text.strip()
+            rest_dict[22] = dl.find('dd').text.strip()
         elif dl.find('dt').text.strip() == "Ambience":
-            rest_dict['Ambience'] = dl.find('dd').text.strip()
+            rest_dict[23] = dl.find('dd').text.strip()
         elif dl.find('dt').text.strip() == "Has TV":
-            rest_dict['HasTV'] = dl.find('dd').text.strip()
+            rest_dict[24] = dl.find('dd').text.strip()
         elif dl.find('dt').text.strip() == "Caters":
-            rest_dict['Caters'] = dl.find('dd').text.strip()
+            rest_dict[25] = dl.find('dd').text.strip()
         elif "wheelchair" in dl.find('dt').text.strip().lower():
-            rest_dict['WheelchairAccessible'] = dl.find('dd').text.strip()
+            rest_dict[26] = dl.find('dd').text.strip()
     return rest_dict
 
 
@@ -113,16 +110,22 @@ def get_reviews_for_restaurant(restaurant_url):
     html_content = r.text
     soup = BeautifulSoup(html_content, "html.parser")
 
-    rev_count_tag = soup.find_all("span", attrs={'itemprop': 'reviewCount'})[0]
-    rev_count = int(rev_count_tag.text)
+    rev_count_tag = soup.find("span", attrs={'itemprop': 'reviewCount'})
+    if rev_count_tag:
+        rev_count = int(rev_count_tag.text)
+    else:
+        rev_count = 0
     rev_page_count = int(rev_count / 20) - 1
 
-    restaurant_csv = {}
-    restaurant_name = soup.find('h1', attrs={'class': business_name_identifier})
+    restaurant_csv = []
+    for x in range(29):
+        restaurant_csv.append("")
+    restaurant_name = soup.find('h1')
 
     address_tag = soup.find('address').text.strip()
-    address = address_tag.replace('Chicago', ', Chicago')
-    address += " Neighborhood: " + soup.find('span', attrs={'class': neighborhood_identifier}).text.strip()
+    if address_tag:
+        address = address_tag.replace('Chicago', ', Chicago')
+        address += " Neighborhood: " + soup.find('span', attrs={'class': neighborhood_identifier}).text.strip()
 
     rating = soup.find('meta', attrs={'itemprop': 'ratingValue'})
 
@@ -131,35 +134,53 @@ def get_reviews_for_restaurant(restaurant_url):
 
     hours_tag = soup.find('table', class_=hours_identifier)
     hours = ""
-    for tr in hours_tag.find_all('tr'):
-        for th in tr.find_all('th'):
-            hours += th.text
-            for td in tr.find_all('td'):
-                hours += td.text
-                if tr.find('span', class_="nowrap closed") is not None or tr.find('span', class_="nowrap open") is not None:
-                    break
-    hours = hours.replace("\n", " ").strip()
+    if hours_tag:
+        for tr in hours_tag.find_all('tr'):
+            for th in tr.find_all('th'):
+                hours += th.text
+                for td in tr.find_all('td'):
+                    hours += td.text
+                    if tr.find('span', class_="nowrap closed") is not None or tr.find('span', class_="nowrap open") is not None:
+                        break
+        hours = hours.replace("\n", " ").strip()
 
-    restaurant_csv['WheelchairAccessible'] = "No"
+    restaurant_csv[26] = "No"
     div_biz_info = soup.find_all('div', class_='ywidget')
     restaurant_csv = get_more_biz_info(div_biz_info, restaurant_csv)
 
     price_range = soup.find('span', class_=price_range_identifier)
     website_span = soup.find('span', class_=website_identifier)
-    phone_number = soup.find('span', class_="biz-phone").text.strip()
 
-    restaurant_csv['name'] = restaurant_name.text.strip()
-    restaurant_csv['restaurantID'] = location_obj['markers'][1]['resourceId']
-    restaurant_csv['location'] = location_obj['center']
-    restaurant_csv['address'] = address
-    restaurant_csv['reviewCount'] = rev_count
-    restaurant_csv['rating'] = float(rating['content'])
-    restaurant_csv['categories'] = categories_list.text.replace("  ", "").replace("\n", " ").strip()
-    restaurant_csv['Hours'] = hours
-    restaurant_csv['PriceRange'] = price_range.text.strip()
-    restaurant_csv['webSite']= website_span.find('a').text.strip()
-    restaurant_csv['phoneNumber'] = phone_number
-    restaurant_data_list.append(restaurant_csv)
+    if soup.find('span', class_="biz-phone"):
+        phone_number = soup.find('span', class_="biz-phone").text.strip()
+    else:
+        phone_number = ""
+
+    if restaurant_name:
+        restaurant_csv[1] = restaurant_name.text.strip()
+    if location_obj['markers'][1]['resourceId']:
+        restaurant_csv[0] = location_obj['markers'][1]['resourceId']
+    if location_obj['center']:
+        restaurant_csv[2] = location_obj['center']
+    if address:
+        restaurant_csv[6] = address
+    if rev_count:
+        restaurant_csv[3] = rev_count
+    if rating['content']:
+        restaurant_csv[4] = float(rating['content'])
+    if categories_list:
+        restaurant_csv[5] = categories_list.text.replace("  ", "").replace("\n", " ").strip()
+    if hours:
+        restaurant_csv[7] = hours
+    if price_range:
+        restaurant_csv[13] = price_range.text.strip()
+    if website_span:
+        restaurant_csv[27]= website_span.find('a').text.strip()
+    if phone_number:
+        restaurant_csv[28] = phone_number
+
+    print(restaurant_csv)
+    return restaurant_csv
 
     for i in range(0, rev_page_count):
 
@@ -270,10 +291,10 @@ def generate_review_csv():
         writer = csv.writer(output, lineterminator='\n')
         writer.writerows(rev_data_list)
 
-
-print("{0} {1}".format("\n\n", get_reviews_for_restaurant("https://www.yelp.com/biz/meli-cafe-and-juice-bar-chicago")))
-
-#get_reviews_for_restaurant("https://www.yelp.com/biz/big-and-littles-restaurant-chicago-3")
+#
+# print("{0} {1}".format("\n\n", get_reviews_for_restaurant("https://www.yelp.com/biz/meli-cafe-and-juice-bar-chicago")))
+#
+# get_reviews_for_restaurant("https://www.yelp.com/biz/the-vig-chicago-chicago-2")
 # for x in restaurant_data_list:
 #     for key, value in x.items():
 #         print(key, value)
